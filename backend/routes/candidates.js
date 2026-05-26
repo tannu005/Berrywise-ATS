@@ -9,9 +9,9 @@ const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 // Setup upload directory
-const uploadDir = process.env.NODE_ENV === 'production' ? '/tmp' : path.join(__dirname, '../uploads');
-if (process.env.NODE_ENV !== 'production' && !fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+const uploadDir = process.env.PERSISTENT_DIR ? path.join(process.env.PERSISTENT_DIR, 'uploads') : (process.env.NODE_ENV === 'production' ? '/tmp' : path.join(__dirname, '../uploads'));
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
