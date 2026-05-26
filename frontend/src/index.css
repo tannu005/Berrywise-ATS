@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-color: #1a1a1a;
+  --text-color: #f3f4f6;
+  --panel-bg: rgba(34, 34, 34, 0.6);
+  --panel-hover: rgba(34, 34, 34, 0.85);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --accent-teal: #0d9488;
+}
+
+.light-theme {
+  --bg-color: #f8fafc;
+  --text-color: #1e293b;
+  --panel-bg: rgba(255, 255, 255, 0.7);
+  --panel-hover: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --accent-teal: #0f766e;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.5s ease, color 0.5s ease;
+    /* Custom default cursor */
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%230d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') 10 10, auto;
+    
+    /* Richer animated background */
+    background: 
+      radial-gradient(circle at 0% 0%, rgba(0, 191, 166, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(255, 111, 97, 0.1) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(28, 28, 30, 1) 0%, rgba(15, 15, 17, 1) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  
+  a, button, [role="button"], select, input[type="file"], .sidebar nav ul li {
+    /* Custom pointer cursor (magnifying glass with Teal accent) */
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="rgba(13,148,136,0.2)" stroke="%230d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') 12 12, pointer !important;
+  }
+  h1, h2, h3, h4, h5, h6, .ss-heading {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-hover:hover {
+  background: var(--panel-hover);
+  border-color: rgba(13, 148, 136, 0.3);
+  box-shadow: 0 8px 30px rgba(13, 148, 136, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-teal);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0f766e;
+}
+
+/* Loading animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 15px rgba(13, 148, 136, 0.3);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 25px rgba(13, 148, 136, 0.6);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, #0d9488 0%, #6ee7b7 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
