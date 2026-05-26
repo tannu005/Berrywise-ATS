@@ -225,6 +225,14 @@ app.post('/api/log-error', (req, res) => {
   res.sendStatus(200);
 });
 
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
+  });
+}
+
 // Global Error Handler
 app.use(errorHandler);
 

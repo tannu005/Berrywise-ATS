@@ -8,3 +8,5 @@ logs/
 .DS_Store
 build/
 temp/
+
+.vercel

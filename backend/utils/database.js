@@ -4,8 +4,8 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const logger = require('./logger');
 
-const dbDir = path.join(__dirname, '../data');
-if (!fs.existsSync(dbDir)) {
+const dbDir = process.env.NODE_ENV === 'production' ? '/tmp' : path.join(__dirname, '../data');
+if (process.env.NODE_ENV !== 'production' && !fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir);
 }
 

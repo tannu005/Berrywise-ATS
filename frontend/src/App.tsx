@@ -9,9 +9,9 @@ import Results from './components/Results';
 import { io } from 'socket.io-client';
 import { Job, Candidate, EvaluationData, AuditLog } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:5000/graphql';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '');
+const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');

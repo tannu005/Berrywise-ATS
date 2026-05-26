@@ -9,8 +9,8 @@ const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 // Setup upload directory
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
+const uploadDir = process.env.NODE_ENV === 'production' ? '/tmp' : path.join(__dirname, '../uploads');
+if (process.env.NODE_ENV !== 'production' && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
