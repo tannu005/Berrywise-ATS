@@ -6,14 +6,8 @@ services:
     rootDir: .
     buildCommand: npm run build
     startCommand: npm start
-    disk:
-      name: sqlite-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: PORT
         value: 5000
       - key: NODE_ENV
         value: production
-      - key: PERSISTENT_DIR
-        value: /data
