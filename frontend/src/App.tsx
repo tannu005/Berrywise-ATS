@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Briefcase, Users, LayoutDashboard, PlusCircle, LogOut, Key, FileText, CheckCircle, Sun, Moon, Shield, Menu, X } from 'lucide-react';
+import { Briefcase, Users, LayoutDashboard, PlusCircle, LogOut, Key, FileText, CheckCircle, Sun, Moon, Shield, Menu, X, Sparkles } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import gsap from 'gsap';
+import { motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import JobForm from './components/JobForm';
 import Upload from './components/Upload';
 import Results from './components/Results';
+import { SplashCursor } from './components/animations/SplashCursor';
+import { TransitionOverlay } from './components/animations/TransitionOverlay';
 import { io } from 'socket.io-client';
 import { Job, Candidate, EvaluationData, AuditLog } from './types';
 
@@ -28,6 +31,13 @@ function App() {
   const [user, setUser] = useState(initialUser);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [nextTab, setNextTab] = useState('');
+
+  const navigateToTab = (tab: string) => {
+    setNextTab(tab);
+    setIsTransitioning(true);
+  };
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [role, setRole] = useState(localStorage.getItem('role') || 'Recruiter');
   const pageRef = useRef(null);
@@ -380,30 +390,58 @@ function App() {
         <div className={`sidebar-container ${isMenuOpen ? 'menu-open' : ''}`}>
           <section className="menu-foldout">
             <nav>
-              <ul>
+              <ul className="space-y-2 relative">
                 <li 
-                  className={activeTab === 'dashboard' ? 'active' : ''}
-                  onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
+                  className={`relative cursor-pointer transition-colors px-4 py-3 rounded-xl flex items-center select-none ${activeTab === 'dashboard' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => { navigateToTab('dashboard'); setIsMenuOpen(false); }}
                 >
-                  <span><LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard</span>
+                  {activeTab === 'dashboard' && (
+                    <motion.div 
+                      layoutId="active-menu-pill"
+                      className="absolute inset-0 bg-cyan-500/10 border-l-2 border-cyan-400 rounded-xl pointer-events-none z-0"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center"><LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard</span>
                 </li>
                 <li 
-                  className={activeTab === 'job-create' ? 'active' : ''}
-                  onClick={() => { setActiveTab('job-create'); setIsMenuOpen(false); }}
+                  className={`relative cursor-pointer transition-colors px-4 py-3 rounded-xl flex items-center select-none ${activeTab === 'job-create' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => { navigateToTab('job-create'); setIsMenuOpen(false); }}
                 >
-                  <span><PlusCircle className="h-5 w-5 mr-3" /> Post Job</span>
+                  {activeTab === 'job-create' && (
+                    <motion.div 
+                      layoutId="active-menu-pill"
+                      className="absolute inset-0 bg-cyan-500/10 border-l-2 border-cyan-400 rounded-xl pointer-events-none z-0"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center"><PlusCircle className="h-5 w-5 mr-3" /> Post Job</span>
                 </li>
                 <li 
-                  className={`${activeTab === 'upload' ? 'active' : ''} ${!selectedJobId ? 'disabled' : ''}`}
-                  onClick={() => { if (selectedJobId) { setActiveTab('upload'); setIsMenuOpen(false); } }}
+                  className={`relative cursor-pointer transition-colors px-4 py-3 rounded-xl flex items-center select-none ${!selectedJobId ? 'opacity-40 cursor-not-allowed' : activeTab === 'upload' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => { if (selectedJobId) { navigateToTab('upload'); setIsMenuOpen(false); } }}
                 >
-                  <span><FileText className="h-5 w-5 mr-3" /> Upload</span>
+                  {selectedJobId && activeTab === 'upload' && (
+                    <motion.div 
+                      layoutId="active-menu-pill"
+                      className="absolute inset-0 bg-cyan-500/10 border-l-2 border-cyan-400 rounded-xl pointer-events-none z-0"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center"><FileText className="h-5 w-5 mr-3" /> Upload</span>
                 </li>
                 <li 
-                  className={`${activeTab === 'results' ? 'active' : ''} ${!selectedJobId ? 'disabled' : ''}`}
-                  onClick={() => { if (selectedJobId) { setActiveTab('results'); setIsMenuOpen(false); } }}
+                  className={`relative cursor-pointer transition-colors px-4 py-3 rounded-xl flex items-center select-none ${!selectedJobId ? 'opacity-40 cursor-not-allowed' : activeTab === 'results' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => { if (selectedJobId) { navigateToTab('results'); setIsMenuOpen(false); } }}
                 >
-                  <span><Users className="h-5 w-5 mr-3" /> Ratings</span>
+                  {selectedJobId && activeTab === 'results' && (
+                    <motion.div 
+                      layoutId="active-menu-pill"
+                      className="absolute inset-0 bg-cyan-500/10 border-l-2 border-cyan-400 rounded-xl pointer-events-none z-0"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center"><Users className="h-5 w-5 mr-3" /> Ratings</span>
                 </li>
               </ul>
             </nav>
@@ -465,7 +503,14 @@ function App() {
             setTab={setActiveTab}
           />
         )}
+
         </div>
+        <SplashCursor />
+        <TransitionOverlay 
+          isVisible={isTransitioning} 
+          onMidpoint={() => setActiveTab(nextTab)} 
+          onComplete={() => setIsTransitioning(false)} 
+        />
       </div>
     </div>
   );
