@@ -71,10 +71,14 @@ function App() {
   const [evaluations, setEvaluations] = useState<EvaluationData | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot' | 'reset'>('login');
+  const isRegistering = authMode === 'register';
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
@@ -126,7 +130,89 @@ function App() {
       setToken(data.token);
       setUser(data.user);
       toast.success(isRegistering ? 'Account created successfully!' : 'Welcome back!');
-    } catch (err) {
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to request reset.');
+
+      toast.success(data.message);
+      
+      if (data.isTest && data.previewUrl) {
+        toast((t) => (
+          <div className="text-xs">
+            <span className="font-bold text-white block mb-1">🔑 Reset Code Generated!</span>
+            <span>Reset email dispatched to <strong>{email}</strong>.</span>
+            <a 
+              href={data.previewUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-pink-400 hover:text-pink-300 underline font-bold mt-2 block"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Click here to view reset email inbox &gt;
+            </a>
+          </div>
+        ), { duration: 15000 });
+      }
+
+      setAuthMode('reset');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetCode || resetCode.trim().length !== 6) {
+      toast.error('Verification code must be 6 digits.');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      toast.error('Password must be at least 4 characters.');
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetCode.trim(), newPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset password.');
+
+      toast.success(data.message);
+      setAuthMode('login');
+      setResetCode('');
+      setNewPassword('');
+      setPassword('');
+    } catch (err: any) {
       toast.error(err.message);
     } finally {
       setLoginLoading(false);
@@ -300,69 +386,183 @@ function App() {
             <p className="text-xs text-slate-400 mt-1 font-medium">Recruitment Pipeline Optimizer</p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-6">
-            {isRegistering && (
+          {authMode === 'forgot' ? (
+            <form onSubmit={handleForgotPassword} className="space-y-6">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Registered Email Address</label>
                 <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
-                  placeholder="Jane Doe"
+                  placeholder="recruiter@berrywise.com"
                   required
                 />
               </div>
-            )}
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
-                placeholder="recruiter@berrywise.com"
-                required
-              />
-            </div>
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-3 px-4 transition-all duration-300 disabled:opacity-50 text-sm rounded-3xl shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] flex items-center justify-center gap-2 mt-4"
+              >
+                {loginLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Send Reset Code
+                  </>
+                )}
+              </button>
+              
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setAuthMode('login')}
+                  type="button"
+                  className="text-xs text-slate-500 hover:text-white transition-colors"
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </form>
+          ) : authMode === 'reset' ? (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Recruiter Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled
+                  className="w-full bg-[#0F0914] border border-white/5 opacity-50 px-4 py-3 text-gray-500 font-sans text-sm rounded-3xl cursor-not-allowed"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">6-Digit Reset Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value)}
+                  className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-mono text-center tracking-[1em] text-sm rounded-3xl"
+                  placeholder="000000"
+                  required
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-3 px-4 transition-all duration-300 disabled:opacity-50 text-sm rounded-3xl shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-4"
-            >
-              {loginLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <Key className="h-4 w-4" /> {isRegistering ? 'Create Account' : 'Sign In'}
-                </>
-              )}
-            </button>
-          </form>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
 
-          <div className="mt-8 text-center text-xs text-slate-500 border-t border-white/5 pt-6">
-            <button 
-              onClick={() => setIsRegistering(!isRegistering)}
-              type="button"
-              className="text-[#6366F1] hover:text-[#818CF8] font-medium transition-colors"
-            >
-              {isRegistering ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-            </button>
-          </div>
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-3 px-4 transition-all duration-300 disabled:opacity-50 text-sm rounded-3xl shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] flex items-center justify-center gap-2 mt-4"
+              >
+                {loginLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Reset Password
+                  </>
+                )}
+              </button>
+
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setAuthMode('forgot')}
+                  type="button"
+                  className="text-xs text-slate-500 hover:text-white transition-colors"
+                >
+                  ← Request New Code
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={handleAuth} className="space-y-6">
+                {isRegistering && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
+                      placeholder="Jane Doe"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
+                    placeholder="recruiter@berrywise.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+                    {!isRegistering && (
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('forgot')}
+                        className="text-[10px] font-semibold text-[#6366F1] hover:text-[#818CF8] uppercase tracking-wider transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-[#0F0914] border border-white/10 px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all font-sans text-sm rounded-3xl"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-3 px-4 transition-all duration-300 disabled:opacity-50 text-sm rounded-3xl shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-4"
+                >
+                  {loginLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <Key className="h-4 w-4" /> {isRegistering ? 'Create Account' : 'Sign In'}
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center text-xs text-slate-500 border-t border-white/5 pt-6">
+                <button 
+                  onClick={() => setAuthMode(isRegistering ? 'login' : 'register')}
+                  type="button"
+                  className="text-[#6366F1] hover:text-[#818CF8] font-medium transition-colors"
+                >
+                  {isRegistering ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

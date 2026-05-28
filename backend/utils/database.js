@@ -157,6 +157,15 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // 8. Create Password Resets Table
+    await dbQuery.run(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        email TEXT PRIMARY KEY,
+        code TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+      )
+    `);
+
     logger.info('Database schemas checked and verified.');
   } catch (err) {
     logger.error(`Database initialization failed: ${err.message}`);

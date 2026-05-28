@@ -145,6 +145,85 @@ app.post('/api/auth/login', async (req, res, next) => {
   }
 });
 
+// Forgot Password Endpoint
+app.post('/api/auth/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const user = await dbQuery.get('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
+    if (!user) {
+      return res.status(404).json({ error: 'No account registered with this email address.' });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1000;
+
+    await dbQuery.run(
+      `INSERT INTO password_resets (email, code, expires_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(email) DO UPDATE SET code=excluded.code, expires_at=excluded.expires_at`,
+      [normalizedEmail, code, expiresAt]
+    );
+
+    const { sendPasswordResetEmail } = require('./services/emailService');
+    const emailResult = await sendPasswordResetEmail({ email: normalizedEmail, code });
+
+    logger.info(`Password reset code dispatched for user ${normalizedEmail}`);
+    res.json({ 
+      success: true, 
+      message: 'Reset verification code emailed successfully!',
+      previewUrl: emailResult.previewUrl,
+      isTest: emailResult.isTest
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Reset Password Endpoint
+app.post('/api/auth/reset-password', async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, code, and new password are required.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const resetRecord = await dbQuery.get('SELECT * FROM password_resets WHERE email = ?', [normalizedEmail]);
+    
+    if (!resetRecord) {
+      return res.status(400).json({ error: 'No active password reset request found.' });
+    }
+
+    if (resetRecord.code !== code.trim()) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    if (Date.now() > resetRecord.expires_at) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await dbQuery.run('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, normalizedEmail]);
+    await dbQuery.run('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
+
+    logger.info(`Password successfully reset for user ${normalizedEmail}`);
+    res.json({ success: true, message: 'Password reset completed successfully. Please sign in with your new password!' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get SMTP Settings
 app.get('/api/smtp', authenticateToken, async (req, res, next) => {
   try {
