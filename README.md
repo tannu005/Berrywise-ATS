@@ -7,7 +7,7 @@
 ## 🌐 Live Deployed Application
 
 You can access the live deployed system here:
-* **Live Web Application (Vercel)**: [https://recruitment-pipeline-henna.vercel.app/](https://recruitment-pipeline-henna.vercel.app/)
+* **Live Web Application (Vercel)**: [https://recruitment-pipeline-nagl.vercel.app/](https://recruitment-pipeline-nagl.vercel.app/)
 * **Live API Server (Render)**: [https://recruitment-pipeline-backend.onrender.com](https://recruitment-pipeline-backend.onrender.com)
 * **Live GraphQL Playroom**: [https://recruitment-pipeline-backend.onrender.com/graphql](https://recruitment-pipeline-backend.onrender.com/graphql)
 
