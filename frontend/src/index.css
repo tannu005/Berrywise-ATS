@@ -22,9 +22,18 @@
   --accent-fuchsia: #0f766e;
 }
 
-/* Hardcoded Tailwind Class Overrides for Light Mode */
+/* Premium Light Mode Viewport and Page-level background */
+.light-theme body {
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(244, 63, 94, 0.06) 0%, transparent 40%),
+    #f8fafc !important;
+  background-attachment: fixed !important;
+}
+
+/* Hardcoded Tailwind Class Overrides for Light Mode Directory & ATS */
 .light-theme .app-container {
-  background-color: #f8fafc !important;
+  background-color: transparent !important;
   color: #1e293b !important;
 }
 .light-theme .header {
@@ -43,22 +52,66 @@
 .light-theme .bg-slate-900\/40,
 .light-theme .bg-\[\#1a1a1a\]\/10 {
   background-color: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
   color: #1e293b !important;
 }
+
+/* Kanban Board Column Backgrounds */
+.light-theme .bg-\[\#120a1a\]\/40 {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: #1e293b !important;
+}
+
+/* Kanban Card Hover States */
+.light-theme .hover\:bg-\[\#1a1a1a\]\/95:hover {
+  background-color: #f8fafc !important;
+  border-color: rgba(236, 72, 153, 0.4) !important;
+}
+
+/* General Text Overrides */
 .light-theme .text-white, .light-theme .ss-heading, .light-theme h3, .light-theme h4 {
   color: #0f172a !important;
 }
 .light-theme .text-slate-400, .light-theme .text-gray-400 {
   color: #475569 !important;
 }
+
+/* Interactive Elements */
 .light-theme input, .light-theme select, .light-theme textarea {
   background-color: #f1f5f9 !important;
   color: #1e293b !important;
-  border-color: rgba(0,0,0,0.15) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
 }
-.light-theme .border-white\/10, .light-theme .border-gray-800, .light-theme .border-gray-800\/50, .light-theme .border-gray-800\/60, .light-theme .border-gray-800\/40 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
+.light-theme select option {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+/* Card Borders & Structural Elements */
+.light-theme .border-white\/10, 
+.light-theme .border-gray-800, 
+.light-theme .border-gray-800\/50, 
+.light-theme .border-gray-800\/60, 
+.light-theme .border-gray-800\/40,
+.light-theme .border-gray-850,
+.light-theme .border-gray-800\/20,
+.light-theme .border-slate-800 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Premium Light-mode Directory Buttons styling */
+.light-theme button.bg-\[\#1a1a1a\],
+.light-theme .bg-slate-900 {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+.light-theme button.bg-\[\#1a1a1a\]:hover,
+.light-theme .bg-slate-900:hover {
+  background-color: #db2777 !important;
+  color: #ffffff !important;
+  border-color: #db2777 !important;
 }
 
 @layer base {
