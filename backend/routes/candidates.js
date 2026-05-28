@@ -8,6 +8,33 @@ const { parseResumeFile } = require('../services/fileService');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
+// Heuristic to check if extracted text represents a valid resume or CV
+const isResumeOrCV = (text) => {
+  if (!text) return false;
+  const textLower = text.toLowerCase();
+
+  // Documents under 150 characters are highly unlikely to be valid resumes/CVs
+  if (text.trim().length < 150) return false;
+
+  const categories = {
+    education: ['education', 'academic', 'university', 'college', 'degree', 'school', 'gpa', 'bachelor', 'master', 'phd', 'graduate'],
+    experience: ['experience', 'work history', 'employment', 'worked as', 'positions', 'career', 'internship', 'responsibilities'],
+    skills: ['skills', 'technologies', 'expertise', 'languages', 'tools', 'frameworks', 'proficient'],
+    resumeCV: ['resume', 'cv', 'curriculum vitae', 'summary', 'objective', 'profile', 'projects', 'contact']
+  };
+
+  let matchCount = 0;
+  for (const key in categories) {
+    const list = categories[key];
+    if (list.some(keyword => textLower.includes(keyword))) {
+      matchCount++;
+    }
+  }
+
+  // A valid resume/CV should contain matching keywords in at least 2 distinct categories
+  return matchCount >= 2;
+};
+
 // Setup upload directory
 const uploadDir = process.env.PERSISTENT_DIR ? path.join(process.env.PERSISTENT_DIR, 'uploads') : (process.env.NODE_ENV === 'production' ? '/tmp' : path.join(__dirname, '../uploads'));
 if (!fs.existsSync(uploadDir)) {
@@ -49,7 +76,18 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res, next
       filePath = req.file.path;
       try {
         resumeText = await parseResumeFile(filePath, req.file.mimetype);
+        
+        // Enforce that only valid resumes and CVs are accepted
+        if (!isResumeOrCV(resumeText)) {
+          if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+          return res.status(400).json({ error: 'The uploaded file is not a resume/CV.' });
+        }
       } catch (parseError) {
+        if (filePath && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
         logger.error(`Error reading uploaded file: ${parseError.message}`);
         return res.status(422).json({ error: `File text extraction failed: ${parseError.message}` });
       }
