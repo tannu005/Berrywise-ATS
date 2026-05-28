@@ -13,26 +13,30 @@ const isResumeOrCV = (text) => {
   if (!text) return false;
   const textLower = text.toLowerCase();
 
-  // Documents under 150 characters are highly unlikely to be valid resumes/CVs
-  if (text.trim().length < 150) return false;
+  // Validate character lengths (real resumes are typically between 200 and 50,000 chars)
+  // Rejects giant text books, manuals, or extremely brief single-word files
+  if (text.trim().length < 200 || text.trim().length > 60000) return false;
 
   const categories = {
-    education: ['education', 'academic', 'university', 'college', 'degree', 'school', 'gpa', 'bachelor', 'master', 'phd', 'graduate'],
-    experience: ['experience', 'work history', 'employment', 'worked as', 'positions', 'career', 'internship', 'responsibilities'],
-    skills: ['skills', 'technologies', 'expertise', 'languages', 'tools', 'frameworks', 'proficient'],
-    resumeCV: ['resume', 'cv', 'curriculum vitae', 'summary', 'objective', 'profile', 'projects', 'contact']
+    education: ['education', 'academic', 'university', 'college', 'degree', 'school', 'gpa', 'bachelor', 'master', 'phd', 'graduate', 'undergraduate', 'diploma'],
+    experience: ['experience', 'work history', 'employment', 'worked as', 'positions', 'career', 'internship', 'responsibilities', 'work experience', 'professional experience'],
+    skills: ['skills', 'technologies', 'expertise', 'languages', 'tools', 'frameworks', 'proficient', 'technical skills'],
+    resumeCV: ['resume', 'cv', 'curriculum vitae', 'summary', 'objective', 'profile', 'contact information', 'projects']
   };
 
-  let matchCount = 0;
-  for (const key in categories) {
-    const list = categories[key];
-    if (list.some(keyword => textLower.includes(keyword))) {
-      matchCount++;
-    }
-  }
+  const educationMatched = categories.education.some(keyword => textLower.includes(keyword));
+  const experienceMatched = categories.experience.some(keyword => textLower.includes(keyword));
+  const skillsMatched = categories.skills.some(keyword => textLower.includes(keyword));
+  const generalMatched = categories.resumeCV.some(keyword => textLower.includes(keyword));
 
-  // A valid resume/CV should contain matching keywords in at least 2 distinct categories
-  return matchCount >= 2;
+  // Strict double-factor filters:
+  // A real resume/CV must match at least two core pillars (Education + Experience, Experience + Skills, or Education + Skills + general placeholders)
+  // This effectively blocks calendars (matches education only), textbook slices, invoices, etc.
+  if (educationMatched && experienceMatched) return true;
+  if (experienceMatched && skillsMatched) return true;
+  if (educationMatched && skillsMatched && generalMatched) return true;
+
+  return false;
 };
 
 // Setup upload directory
@@ -82,7 +86,7 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res, next
           if (filePath && fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
           }
-          return res.status(400).json({ error: 'The uploaded file is not a resume/CV.' });
+          return res.status(400).json({ error: 'Only resume and CV are allowed to upload, and these documents will not be uploaded.' });
         }
       } catch (parseError) {
         if (filePath && fs.existsSync(filePath)) {
