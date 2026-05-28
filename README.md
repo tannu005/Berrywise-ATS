@@ -8,8 +8,8 @@
 
 You can access the live deployed system here:
 * **Live Web Application (Vercel)**: [https://recruitment-pipeline-nagl.vercel.app/](https://recruitment-pipeline-nagl.vercel.app/)
-* **Live API Server (Render)**: [https://recruitment-pipeline-backend.onrender.com](https://recruitment-pipeline-backend.onrender.com)
-* **Live GraphQL Playroom**: [https://recruitment-pipeline-backend.onrender.com/graphql](https://recruitment-pipeline-backend.onrender.com/graphql)
+* **Live API Server (Render)**: [https://recruitment-pipeline-knu8.onrender.com](https://recruitment-pipeline-knu8.onrender.com)
+* **Live GraphQL Playroom**: [https://recruitment-pipeline-knu8.onrender.com/graphql](https://recruitment-pipeline-knu8.onrender.com/graphql)
 
 ---
 
