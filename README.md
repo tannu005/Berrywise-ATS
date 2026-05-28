@@ -4,6 +4,15 @@
 
 ---
 
+## 🌐 Live Deployed Application
+
+You can access the live deployed system here:
+* **Live Web Application (Vercel)**: [https://recruitment-pipeline-henna.vercel.app/](https://recruitment-pipeline-henna.vercel.app/)
+* **Live API Server (Render)**: [https://recruitment-pipeline-backend.onrender.com](https://recruitment-pipeline-backend.onrender.com)
+* **Live GraphQL Playroom**: [https://recruitment-pipeline-backend.onrender.com/graphql](https://recruitment-pipeline-backend.onrender.com/graphql)
+
+---
+
 ## 🚀 Key Feature Highlights
 
 ### 1. 🧠 Intelligent AI Resume Evaluation
@@ -33,7 +42,7 @@
 * **Web Sourcing**: Dynamic URL scraping mockup that parses live professional profiles into evaluate-ready formats.
 
 ### 6. 🎨 Premium Glassmorphic Design System
-* **Dynamic Light/Dark Themes**: Balanced contrasts, HSL color tokens, and custom glowing elements tailored for premium recruiter experiences.
+* **Dynamic Light/Dark Themes**: Balanced contrasts, HSL color tokens, and custom glowing elements tailored for recruiter experiences.
 * **Liquid Sidebar Navigation**: Employs an animated flowing menu utilizing elastic curtains and SVG morphing transitions.
 * **Personalized Collaboration**: In-app comments section for team evaluations and live, synchronized real-time candidate updates powered by Socket.IO.
 
