@@ -82,6 +82,11 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res, next
       return res.status(400).json({ error: 'jobId, candidateName, and candidateEmail are required.' });
     }
 
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(candidateEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid candidate email address.' });
+    }
+
     const job = await dbQuery.get('SELECT * FROM jobs WHERE id = ? AND user_id = ?', [jobId, req.user.id]);
     if (!job) {
       return res.status(404).json({ error: 'Job posting not found or you do not have permission.' });
@@ -192,6 +197,74 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
     };
 
     res.json(responseData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Email candidate report to the logged-in recruiter
+router.post('/:id/email-report', authenticateToken, async (req, res, next) => {
+  try {
+    const candidate = await dbQuery.get(`
+      SELECT c.* FROM candidates c
+      JOIN jobs j ON c.job_id = j.id
+      WHERE c.id = ? AND j.user_id = ?
+    `, [req.params.id, req.user.id]);
+    
+    if (!candidate) {
+      return res.status(404).json({ error: 'Candidate not found or access denied.' });
+    }
+
+    const evaluation = await dbQuery.get('SELECT * FROM evaluations WHERE candidate_id = ?', [req.params.id]);
+    if (!evaluation) {
+      return res.status(404).json({ error: 'Evaluation report not generated yet.' });
+    }
+
+    const job = await dbQuery.get('SELECT * FROM jobs WHERE id = ?', [candidate.job_id]);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found.' });
+    }
+
+    const { recipientEmail } = req.body;
+    const targetEmail = (recipientEmail || req.user.email).toLowerCase().trim();
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(targetEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid recipient email address.' });
+    }
+
+    // Send the actual report email
+    const { sendCandidateReportEmail } = require('../services/emailService');
+    const emailResult = await sendCandidateReportEmail({
+      recruiterEmail: targetEmail,
+      candidate,
+      evaluation,
+      job,
+      userId: req.user.id
+    });
+
+    // Create Audit Log for the email dispatch
+    await dbQuery.run(
+      'INSERT INTO audit_logs (id, job_id, action, details) VALUES (?, ?, ?, ?)',
+      [
+        `audit_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+        candidate.job_id,
+        'REPORT_EMAIL',
+        JSON.stringify({ 
+          candidateName: candidate.name, 
+          recipientEmail: targetEmail,
+          messageId: emailResult.messageId,
+          previewUrl: emailResult.previewUrl 
+        })
+      ]
+    );
+
+    res.json({ 
+      success: true, 
+      recipient: targetEmail,
+      previewUrl: emailResult.previewUrl,
+      isTest: emailResult.isTest
+    });
   } catch (error) {
     next(error);
   }

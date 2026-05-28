@@ -25,10 +25,39 @@ function CandidateDetails({ cand, token, apiUrl, isBlindMode }: CandidateDetails
   const [fullCandidate, setFullCandidate] = useState<any>(null);
   const [loadingFull, setLoadingFull] = useState(false);
 
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [customRecipient, setCustomRecipient] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [isSmtpConfigured, setIsSmtpConfigured] = useState(false);
+  const [isCheckingSmtp, setIsCheckingSmtp] = useState(false);
+
   useEffect(() => {
     fetchNotes();
     fetchFullCandidate();
   }, [cand.candidateId]);
+
+  useEffect(() => {
+    if (showEmailModal) {
+      checkSmtpStatus();
+    }
+  }, [showEmailModal]);
+
+  const checkSmtpStatus = async () => {
+    setIsCheckingSmtp(true);
+    try {
+      const res = await fetch(`${apiUrl}/smtp`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsSmtpConfigured(!!data.configured);
+      }
+    } catch (err) {
+      console.error('Error checking SMTP status:', err);
+    } finally {
+      setIsCheckingSmtp(false);
+    }
+  };
 
   const fetchFullCandidate = async () => {
     setLoadingFull(true);
@@ -182,6 +211,69 @@ function CandidateDetails({ cand, token, apiUrl, isBlindMode }: CandidateDetails
     toast.success('Generated CSV Export');
   };
 
+  const handleEmailReport = () => {
+    setCustomRecipient(cand.email || '');
+    setShowEmailModal(true);
+  };
+
+  const handleEmailReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customRecipient.trim()) {
+      toast.error('Recipient email address is required.');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(customRecipient.trim())) {
+      toast.error('Please enter a valid recipient email address.');
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      const res = await fetch(`${apiUrl}/candidates/${cand.candidateId}/email-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          recipientEmail: customRecipient.trim()
+        })
+      });
+      const data = await res.text().then(t => { try { return t ? JSON.parse(t) : {}; } catch(e) { return {}; } });
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to email report.');
+      }
+      
+      setShowEmailModal(false);
+
+      if (data.isTest && data.previewUrl) {
+        toast((t) => (
+          <div className="text-xs">
+            <span className="font-bold text-white block mb-1">📬 Test Email Generated!</span>
+            <span>Evaluation report emailed to <strong>{data.recipient}</strong>.</span>
+            <a 
+              href={data.previewUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-pink-400 hover:text-pink-300 underline font-bold mt-2 block"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Click here to view email inbox &gt;
+            </a>
+          </div>
+        ), { duration: 15000 });
+      } else {
+        toast.success(`Evaluation report successfully emailed to: ${data.recipient}!`);
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
   return (
     <div className="p-6 border-t border-gray-800/60 bg-[#1a1a1a]/20 space-y-8" id={`candidate-export-${cand.candidateId}`}>
       
@@ -202,6 +294,13 @@ function CandidateDetails({ cand, token, apiUrl, isBlindMode }: CandidateDetails
             title="Export to CSV"
           >
             <Download className="h-4 w-4" /> CSV
+          </button>
+          <button 
+            onClick={handleEmailReport}
+            className="flex items-center gap-2 text-sm text-pink-400 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1.5 rounded-lg transition-all"
+            title="Email Report to Recruiter"
+          >
+            <Send className="h-4 w-4" /> Email Report
           </button>
         </div>
       </div>
@@ -557,6 +656,82 @@ function CandidateDetails({ cand, token, apiUrl, isBlindMode }: CandidateDetails
           )}
         </div>
       </div>
+
+      {/* Custom Recipient Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0a0a]/80 backdrop-blur-sm print:hidden">
+          <form onSubmit={handleEmailReportSubmit} className="bg-[#1a1a1a] border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl flex flex-col">
+            <div className="flex justify-between items-center p-5 border-b border-gray-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Send className="h-5 w-5 text-pink-500" /> Email Evaluation Report
+              </h3>
+              <button 
+                type="button"
+                onClick={() => setShowEmailModal(false)} 
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Send a complete, formatted AI evaluation report for <strong className="text-white">{displayName}</strong> to any designated recipient email address below.
+              </p>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Recipient Email Address</label>
+                <input
+                  type="email"
+                  value={customRecipient}
+                  onChange={(e) => setCustomRecipient(e.target.value)}
+                  className="w-full bg-[#222222] border border-gray-800 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-pink-500 text-sm font-sans"
+                  placeholder="e.g. manager@company.com"
+                  required
+                />
+              </div>
+
+              {/* Status helper badge inside modal */}
+              {isCheckingSmtp ? (
+                <div className="text-[10px] text-gray-500 italic">Checking SMTP service status...</div>
+              ) : isSmtpConfigured ? (
+                <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center justify-between text-xs text-emerald-400/90 leading-relaxed">
+                  <span>🚀 Using your <strong>Real SMTP Server</strong></span>
+                  <span className="text-[9px] bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">REAL SMTP</span>
+                </div>
+              ) : (
+                <div className="p-3 bg-fuchsia-500/5 border border-fuchsia-500/10 rounded-xl flex items-center justify-between text-xs text-fuchsia-300/90 leading-relaxed">
+                  <span>📬 Using <strong>Berrywise Ethereal sandbox</strong></span>
+                  <span className="text-[9px] bg-fuchsia-500/10 px-2 py-0.5 rounded-full font-bold">SIMULATED</span>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-800 bg-[#222222] rounded-b-2xl flex justify-end gap-2">
+              <button 
+                type="button"
+                onClick={() => setShowEmailModal(false)} 
+                className="text-gray-400 hover:text-white px-4 py-2 rounded-lg text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={emailSending}
+                className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {emailSending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" /> Send Email
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
     </div>
   );

@@ -7,6 +7,7 @@ import JobForm from './components/JobForm';
 import Upload from './components/Upload';
 import Results from './components/Results';
 import TalentPool from './components/TalentPool';
+import { Profile } from './components/Profile';
 import { CursorTrail } from './components/animations/CursorTrail';
 import { TransitionOverlay } from './components/animations/TransitionOverlay';
 import { FlowingMenu } from './components/animations/FlowingMenu';
@@ -99,6 +100,13 @@ function App() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
     setLoginLoading(true);
 
     const endpoint = isRegistering ? '/auth/register' : '/auth/login';
@@ -257,6 +265,17 @@ function App() {
             isBlindMode={isBlindMode}
             evaluations={evaluations}
             jobs={jobs}
+          />
+        );
+      case 'profile':
+        return (
+          <Profile
+            user={user}
+            jobs={jobs}
+            candidates={candidates}
+            setTab={setActiveTab}
+            token={token}
+            apiUrl={API_URL}
           />
         );
       default:

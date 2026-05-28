@@ -28,6 +28,13 @@ function Upload({ token, apiUrl, jobId, job, setTab, onSuccess }: any) {
       toast.error('Please select a resume file.');
       return;
     }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid candidate email address.');
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData();
@@ -91,6 +98,13 @@ function Upload({ token, apiUrl, jobId, job, setTab, onSuccess }: any) {
   const handleBulkSubmit = async () => {
     if (bulkFiles.length === 0) {
       toast.error('Please add at least one resume file.');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const invalidItems = bulkFiles.filter(item => !emailRegex.test(item.email));
+    if (invalidItems.length > 0) {
+      toast.error(`Please correct invalid email formats for: ${invalidItems.map(x => x.name).join(', ')}`);
       return;
     }
     
@@ -355,7 +369,7 @@ function Upload({ token, apiUrl, jobId, job, setTab, onSuccess }: any) {
                   <div key={item.id} className="p-3 bg-slate-900 rounded-3xl flex items-center justify-between border border-slate-800/60">
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-fuchsia-400" />
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <input
                           type="text"
                           value={item.name}
@@ -363,9 +377,19 @@ function Upload({ token, apiUrl, jobId, job, setTab, onSuccess }: any) {
                             const updated = bulkFiles.map(f => f.id === item.id ? { ...f, name: e.target.value } : f);
                             setBulkFiles(updated);
                           }}
-                          className="bg-transparent font-semibold text-sm text-white focus:outline-none border-b border-dashed border-gray-600 focus:border-fuchsia-500"
+                          className="bg-transparent font-semibold text-sm text-white focus:outline-none border-b border-dashed border-gray-600 focus:border-fuchsia-500 w-48"
+                          placeholder="Candidate Name"
                         />
-                        <p className="text-xs text-gray-500 mt-1 font-mono">{item.email}</p>
+                        <input
+                          type="text"
+                          value={item.email}
+                          onChange={(e) => {
+                            const updated = bulkFiles.map(f => f.id === item.id ? { ...f, email: e.target.value } : f);
+                            setBulkFiles(updated);
+                          }}
+                          className="bg-transparent text-xs text-gray-400 focus:outline-none border-b border-dashed border-gray-700 focus:border-fuchsia-500 font-mono w-48 mt-1"
+                          placeholder="candidate@email.com"
+                        />
                       </div>
                     </div>
                     <button

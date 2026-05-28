@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, PlusCircle, FileText, Users, X, Menu as MenuIcon, Star, Eye, EyeOff } from "lucide-react";
+import { LayoutDashboard, PlusCircle, FileText, Users, X, Menu as MenuIcon, Star, Eye, EyeOff, User } from "lucide-react";
 import { toast } from 'react-hot-toast';
 
 interface FlowingMenuProps {
@@ -22,6 +22,7 @@ const navItems = [
   { id: 'upload', name: "Upload", icon: <FileText />, requiresJob: true },
   { id: 'results', name: "Ratings", icon: <Users />, requiresJob: true },
   { id: 'talent-pool', name: "Talent Pool", icon: <Star /> },
+  { id: 'profile', name: "Profile", icon: <User /> },
 ];
 
 export const FlowingMenu: React.FC<FlowingMenuProps> = ({ 

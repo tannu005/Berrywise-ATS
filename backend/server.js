@@ -17,7 +17,7 @@ global.appCache = appCache;
 
 const logger = require('./utils/logger');
 const { initializeDatabase, dbQuery } = require('./utils/database');
-const { generateToken } = require('./middleware/auth');
+const { generateToken, authenticateToken } = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 
 // Initialize express app
@@ -72,6 +72,11 @@ app.post('/api/auth/register', async (req, res, next) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required.' });
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -135,6 +140,54 @@ app.post('/api/auth/login', async (req, res, next) => {
         role: user.role
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get SMTP Settings
+app.get('/api/smtp', authenticateToken, async (req, res, next) => {
+  try {
+    const settings = await dbQuery.get('SELECT host, port, user, secure, from_email FROM smtp_settings WHERE user_id = ?', [req.user.id]);
+    if (!settings) {
+      return res.json({ configured: false });
+    }
+    res.json({ configured: true, ...settings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update/Save SMTP Settings
+app.post('/api/smtp', authenticateToken, async (req, res, next) => {
+  try {
+    const { host, port, user, pass, secure, from_email } = req.body;
+    if (!host || !port || !user || !pass || !from_email) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(from_email)) {
+      return res.status(400).json({ error: 'Please enter a valid Sender Email Address.' });
+    }
+
+    const secureVal = secure ? 1 : 0;
+
+    await dbQuery.run(
+      `INSERT INTO smtp_settings (user_id, host, port, user, pass, secure, from_email)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         host=excluded.host,
+         port=excluded.port,
+         user=excluded.user,
+         pass=excluded.pass,
+         secure=excluded.secure,
+         from_email=excluded.from_email`,
+      [req.user.id, host, parseInt(port), user, pass, secureVal, from_email]
+    );
+
+    logger.info(`SMTP configuration updated for user ${req.user.id}`);
+    res.json({ success: true, message: 'SMTP Configuration saved successfully!' });
   } catch (error) {
     next(error);
   }

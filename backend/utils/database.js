@@ -143,6 +143,20 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // 7. Create SMTP Settings Table
+    await dbQuery.run(`
+      CREATE TABLE IF NOT EXISTS smtp_settings (
+        user_id TEXT PRIMARY KEY,
+        host TEXT NOT NULL,
+        port INTEGER NOT NULL,
+        user TEXT NOT NULL,
+        pass TEXT NOT NULL,
+        secure INTEGER DEFAULT 0,
+        from_email TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
     logger.info('Database schemas checked and verified.');
   } catch (err) {
     logger.error(`Database initialization failed: ${err.message}`);
