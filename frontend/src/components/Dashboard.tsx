@@ -25,6 +25,19 @@ interface DashboardProps {
 function Dashboard({ jobId, job, candidates, evaluations, auditLogs, refreshData, setTab, isBlindMode }: DashboardProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const containerRef = useRef(null);
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsLightMode(document.body.classList.contains("light-theme"));
+    };
+    checkTheme();
+    
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    
+    return () => observer.disconnect();
+  }, []);
 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [shortlistSubject, setShortlistSubject] = useState(localStorage.getItem('shortlistSubject') || 'Great news! You have been shortlisted for {{job_title}}');
@@ -254,7 +267,9 @@ function Dashboard({ jobId, job, candidates, evaluations, auditLogs, refreshData
               { step: '4', title: 'Review', desc: 'Get insights and interview kits.', icon: <CheckCircle className="text-fuchsia-400 w-5 h-5"/> }
             ].map(s => (
               <div key={s.step} className="glass-panel p-5 rounded-3xl border border-slate-800/50 text-center relative overflow-hidden">
-                <div className="absolute -top-3 -right-3 text-5xl font-black text-gray-800/20">{s.step}</div>
+                <div className={`absolute -top-3 -right-3 text-5xl font-black transition-colors duration-300 ${
+                  isLightMode ? "text-fuchsia-600/30" : "text-fuchsia-500/20"
+                }`}>{s.step}</div>
                 <div className="bg-fuchsia-500/10 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 border border-fuchsia-500/20">
                   {s.icon}
                 </div>
